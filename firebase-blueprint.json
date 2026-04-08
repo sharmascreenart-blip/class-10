@@ -1,0 +1,154 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Student or Admin user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "onboarded": { "type": "boolean" },
+        "targetPercentage": { "type": "string" },
+        "hardSubjects": { "type": "array", "items": { "type": "string" } },
+        "studyHours": { "type": "string" },
+        "learningPreference": { "type": "string" },
+        "examDate": { "type": "string" },
+        "streak": { "type": "number" },
+        "lastStudyDate": { "type": "string" },
+        "points": { "type": "number" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Academic subject",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "Chapter": {
+      "title": "Chapter",
+      "description": "Chapter within a subject",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "order": { "type": "number" },
+        "features": {
+          "type": "object",
+          "properties": {
+            "video": { "type": "boolean" },
+            "pdf": { "type": "boolean" },
+            "test": { "type": "boolean" },
+            "notes": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["id", "subjectId", "title"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Global announcement or banner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "success"] },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "message"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "appName": { "type": "string" },
+        "themeColor": { "type": "string" },
+        "features": {
+          "type": "object",
+          "properties": {
+            "aiNotes": { "type": "boolean" },
+            "tests": { "type": "boolean" },
+            "videos": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Progress": {
+      "title": "Progress",
+      "description": "Student progress on a chapter",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "chapterId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "testScore": { "type": "number" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["userId", "chapterId", "completed"]
+    },
+    "Quiz": {
+      "title": "Quiz",
+      "description": "Chapter quiz questions",
+      "type": "object",
+      "properties": {
+        "chapterId": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctAnswer": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "List of subjects"
+    },
+    "/subjects/{subjectId}/chapters/{chapterId}": {
+      "schema": "Chapter",
+      "description": "Chapters for a subject"
+    },
+    "/progress/{progressId}": {
+      "schema": "Progress",
+      "description": "Student progress tracking"
+    },
+    "/quizzes/{chapterId}": {
+      "schema": "Quiz",
+      "description": "Quizzes for chapters"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Global announcements"
+    },
+    "/settings/global": {
+      "schema": "AppSettings",
+      "description": "Global app settings"
+    }
+  }
+}

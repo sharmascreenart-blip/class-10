@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (uid)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, 'student' or 'admin')
+    //   - onboarded: boolean
+    //   - targetPercentage: string
+    //   - hardSubjects: list
+    //   - studyHours: string
+    //   - learningPreference: string
+    //   - examDate: string
+    //   - streak: number
+    //   - lastStudyDate: string
+    //   - points: number
+    //
+    // Collection: subjects
+    // Document ID: subjectId
+    // Fields:
+    //   - id: string
+    //   - name: string
+    //   - icon: string
+    //
+    // Collection: subjects/{subjectId}/chapters
+    // Document ID: chapterId
+    // Fields:
+    //   - id: string
+    //   - subjectId: string
+    //   - title: string
+    //   - videoUrl: string
+    //   - pdfUrl: string
+    //   - order: number
+    //
+    // Collection: progress
+    // Document ID: progressId (userId_chapterId)
+    // Fields:
+    //   - userId: string
+    //   - chapterId: string
+    //   - subjectId: string
+    //   - completed: boolean
+    //   - testScore: number
+    //   - lastUpdated: string
+    //
+    // Collection: quizzes
+    // Document ID: chapterId
+    // Fields:
+    //   - chapterId: string
+    //   - questions: list of maps
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "sharmascreenart@gmail.com") ||
+        (request.auth.token.email == "karanmssale@gmail.com") ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isOwner(userId) && 
+                    request.resource.data.role == 'student' &&
+                    (!('email' in request.resource.data) || request.resource.data.email == null || isValidEmail(request.resource.data.email)) &&
+                    (!('displayName' in request.resource.data) || (request.resource.data.displayName is string && request.resource.data.displayName.size() < 100));
+      allow update: if isAuthenticated() && (
+                      (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+                      isAdmin()
+                    );
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      match /chapters/{chapterId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /progress/{progressId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAdmin();
+    }
+
+    match /quizzes/{chapterId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
